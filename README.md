@@ -1,6 +1,6 @@
 BrowserCheck [![](https://api.travis-ci.org/LukasReschke/BrowserCheck.png)](https://travis-ci.org/LukasReschke/BrowserCheck/)
 ============
-Browsercheck implements a simple way to check whether a specific browser and installed plugins are outdated.
+BrowserCheck implements a simple way to check whether a specific browser and installed plugins are outdated.
 The check is performed only using the useragent including the installed plugins, an example is provided in the subdirectory example. 
 This library may e.g. be used to show security warnings before logging in.
 
@@ -35,4 +35,4 @@ FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
 COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-```
+``
