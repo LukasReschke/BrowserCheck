@@ -10,7 +10,7 @@ func TestEmpty(t *testing.T) {
 	var x []Application
 
 	Convey("Given no UA", t, func() {
-		UA := "Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko"
+		UA := ""
 
 		Convey("When version is tested", func() {
 			x = Check(UA)
