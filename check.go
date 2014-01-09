@@ -1,4 +1,7 @@
-// Browsercheck implements a simple check whether an user has insecure applications running
+// Browsercheck implements a simple way to check whether a specific 
+// browser and installed plugins are outdated.
+// The check is performed only using the useragent including the installed
+// plugins, an example is provided in the subdirectory example. 
 package browsercheck
 
 import (
@@ -8,35 +11,33 @@ import (
 	"strings"
 )
 
+// Defines a single application
 type Application struct {
-	ReadableName      string `xml:"readable-name"`
-	StringRegex       string `xml:"regex"`
-	Regex             *regexp.Regexp
-	LastSecureVersion string `xml:"last-secure-version"`
-	UpdateUrl         string `xml:"update-url"`
+	ReadableName         string `xml:"readable-name"` // Readable name which can be shown to the user
+	StringRegex          string `xml:"regex"`         // Regex to match the application and the version
+	Regex                *regexp.Regexp
+	LastSecureVersion    string `xml:"last-secure-version"` // Defines the last secure version
+	lastSecureVersionInt []int
+	UpdateUrl            string `xml:"update-url"` // Link to a document stating how to install the new version
 }
 
-type Applications struct {
+type applications struct {
 	Applications []Application `xml:"application"`
 }
 
-var q Applications
-
-// Definitions
-// This database should contain the newest definitions of applications with security updates.
-// Feature updates should not be included in this list. 
-// TODO: Move to data.xml
+// This XML defines the last secure version of an application
+// TODO: Check whether it is possible to move this to an external file.
 const definitions = `
 <data>
 	<application>
 		<readable-name>Mac OS X 10.9</readable-name>
-		<regex>(Mac OS X) (\d+)[_.]9(?:[_.](\d+))?</regex>
+		<regex>Mac OS X (10)_(9)_(\d+)</regex>
 		<last-secure-version>10.9.1</last-secure-version>
 		<update-url>http://support.apple.com/kb/ht1338</update-url>
 	</application>
 	<application>
 		<readable-name>Mac OS X</readable-name>
-		<regex>(Mac OS X) (\d+)[_.][0-8](?:[_.](\d+))?</regex>
+		<regex>Mac OS X (10)_[0-8]_(\d+)</regex>
 		<last-secure-version>10.9</last-secure-version>
 		<update-url>https://www.apple.com/osx/how-to-upgrade/</update-url>
 	</application>
@@ -72,48 +73,70 @@ const definitions = `
 	</application>
 </data>`
 
-// Preprocess the regexes
-func init() {
-	xml.Unmarshal([]byte(definitions), &q)
+var apps applications
 
-	// Parse the regexes
-	for i, app := range q.Applications {
-		q.Applications[i].Regex = regexp.MustCompile(app.StringRegex)
+// Initializes the library
+func init() {
+	xml.Unmarshal([]byte(definitions), &apps)
+
+	for i, app := range apps.Applications {
+		// Parse the regexes
+		apps.Applications[i].Regex = regexp.MustCompile(app.StringRegex)
+
+		// Split the last secure version into single strings and convert them to []int
+		// e.g. 5.8.3 => [5 8 3]
+		lastSecureVersion := strings.Split(app.LastSecureVersion, ".")
+		for versionI := range lastSecureVersion {
+			version, _ := strconv.Atoi(lastSecureVersion[versionI])
+			apps.Applications[i].lastSecureVersionInt = append(apps.Applications[i].lastSecureVersionInt, version)
+		}
 	}
 }
 
 // Checks for insecure applications in an UA, returns nil or an list of insecure applications
+// The UA may contain installed plugins, e.g. Adobe Flash
 func Check(ua string) []Application {
-	var insecureApplications []Application
-	// Loop over every regex
-	for _, app := range q.Applications {
-		foundApp := app.Regex.FindStringSubmatch(ua)
-		if len(foundApp) > 0 {
-			// Parse the last secure version
-			lastSecureVersion := strings.Split(app.LastSecureVersion, ".")
 
-			// Convert the user agent version string to an integer value
-			foundVersion := make([]int, len(lastSecureVersion))
-			for i := 1; i < len(lastSecureVersion)+1; i++ {
-				foundVersion[len(foundVersion)-i], _ = strconv.Atoi(foundApp[len(foundApp)-i])
+	// Initialize a slice of potential outdated applications
+	var outdatedApplications []Application
+
+	// Loop over every regex
+	for _, app := range apps.Applications {
+		// Check whether the application has matched the regex
+		foundApp := app.Regex.FindStringSubmatch(ua)
+
+		// An regex has been matched, we have to determine determine
+		// whether the version is older or newer than the last secure
+		// version
+		if len(foundApp) > 0 {
+
+			// Parse the sent sent field
+			foundVersion := make([]int, len(app.lastSecureVersionInt))
+			for i := range app.lastSecureVersionInt {
+				foundVersion[i], _ = strconv.Atoi(foundApp[i+1])
 			}
 
 			// Read the last fields and compare the version
-			for i := 0; i < len(lastSecureVersion); i++ {
-				lastSecureVersionInt, _ := strconv.Atoi(lastSecureVersion[i])
+			for i := 0; i < len(app.lastSecureVersionInt); i++ {
+
 				// Mark applications as secure if a release is newer
 				var secureApp bool
-				if foundVersion[i] >= lastSecureVersionInt {
+
+				// Verify whether the version is newer
+				if foundVersion[i] >= app.lastSecureVersionInt[i] {
 					secureApp = true
 				} else {
 					secureApp = false
 				}
-				if !secureApp && i == len(lastSecureVersion)-1 {
-					insecureApplications = append(insecureApplications, app)
+
+				// Mark as outdated if the passed version is lower than the last secure version
+				if !secureApp && i == len(app.lastSecureVersionInt)-1 {
+					outdatedApplications = append(outdatedApplications, app)
 					break
 				}
 			}
 		}
 	}
-	return insecureApplications
+
+	return outdatedApplications
 }

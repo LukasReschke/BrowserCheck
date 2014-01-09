@@ -1,0 +1,41 @@
+<!DOCTYPE HTML SYSTEM>
+<html>
+	<head>
+		<title>BrowserCheck - Example</title>
+		<script src="http://code.jquery.com/jquery-1.10.2.min.js" type="text/javascript"></script>
+		<script type="text/javascript">
+			// Load plugins
+			var plugins = [];
+			for (var myIndex = 0; myIndex < navigator.plugins.length; myIndex++) {
+			    plugins.push(navigator.plugins[myIndex].name + navigator.plugins[myIndex].description);
+			}
+
+			// Scan
+			$.post( "/check", { plugins: JSON.stringify(plugins) }, function( data ) {
+				var response = jQuery.parseJSON(data);
+			    for(var i=0;i<response.length;i++)
+			    {
+			        var tr="<tr>";
+			        var td1="<td>"+response[i].ReadableName+"</td>";
+			        var td2="<td>"+response[i].LastSecureVersion+"</td>";
+			        var td3="<td>"+response[i].UpdateUrl+"</td></tr>";
+
+			       $("#insecureApplications").append(tr+td1+td2+td3); 
+			    }   
+			});
+		</script>
+	</head>
+	
+	<body>
+		<p>Insecure applications:</p>
+		<table style="width:100%;">
+			<thead>
+				<td>Application</td>
+				<td>Last secure version</td>
+				<td>Update URL</td>
+			</thead>
+			<tbody id="insecureApplications">
+			</tbody>
+		</table>
+	</body>
+</html>

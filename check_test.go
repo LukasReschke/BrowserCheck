@@ -80,3 +80,11 @@ func TestOutdated(t *testing.T) {
 		})
 	})
 }
+
+// Benchmark the check function
+func BenchmarkCheck(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		outdatedString := "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/32.0.1700.68 Safari/537.36 Shockwave Flash 10.1 r100"
+		Check(outdatedString)
+	}
+}
