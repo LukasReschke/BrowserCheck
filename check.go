@@ -123,8 +123,9 @@ func Check(ua string) []Application {
 				var secureApp bool
 
 				// Verify whether the version is newer
-				if foundVersion[i] >= app.lastSecureVersionInt[i] {
+				if foundVersion[i] > app.lastSecureVersionInt[i] || foundVersion[i] == app.lastSecureVersionInt[i] && i == len(app.lastSecureVersionInt)-1 {
 					secureApp = true
+					break
 				} else {
 					secureApp = false
 				}
